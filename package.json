@@ -1,0 +1,22 @@
+{
+  "name": "s3-archive",
+  "version": "1.0.0",
+  "description": "Maintains a searchable index of archived files.",
+  "main": "index.js",
+  "scripts": {
+    "sls": "./node_modules/serverless/bin/serverless"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/davidzholland/s3-archive.git"
+  },
+  "author": "David Holland <davidzholland@gmail.com>",
+  "license": "GPL-3.0-or-later",
+  "bugs": {
+    "url": "https://github.com/davidzholland/s3-archive/issues"
+  },
+  "homepage": "https://github.com/davidzholland/s3-archive#readme",
+  "devDependencies": {
+    "serverless": "^1.51.0"
+  }
+}

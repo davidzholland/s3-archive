@@ -1,0 +1,15 @@
+boto3==1.9.224
+botocore==1.12.224
+docutils==0.15.2
+IPTCInfo3==2.1.4
+jmespath==0.9.4
+mac-tag==2019.4.13
+Pillow==6.1.0
+psutil==5.6.3
+public==2019.4.13
+python-dateutil==2.8.0
+runcmd==2019.4.13
+s3transfer==0.2.1
+six==1.12.0
+urllib3==1.25.3
+values==2019.4.13
