@@ -7,9 +7,11 @@ from PIL.ExifTags import TAGS
 import mac_tag
 from libxmp.utils import file_to_dict
 from libxmp import XMPFiles, consts
+from os import walk
+import chardet
 
 
-paths = [
+sample_paths = [
     # TODO: accept paths as input
 ]
 
@@ -71,17 +73,17 @@ def get_osx_tags(path):
         print('exeption: ', e)
         return False
 
-def parse_metadata():
+def parse_metadata(paths):
     items = []
     for path in paths:
         item = {
             'file_path': path,
-            'created_at': None,
-            'headline': None,
-            'caption': None,
-            'tags': None,
-            'latitude': None,
-            'longitude': None
+            'created_at': '',
+            'headline': '',
+            'caption': '',
+            'tags': [],
+            'latitude': '',
+            'longitude': ''
         } 
         # XMP
         xmp = get_xmp(path)
@@ -97,14 +99,22 @@ def parse_metadata():
         # IPTC
         iptc = get_iptc(path)
         if iptc:
-            # TODO: keywords
             if iptc['headline']:
-                item['headline'] = iptc['headline']
+                item['headline'] = str(iptc['headline'], 'utf-8')
             if iptc['caption/abstract']:
-                item['caption'] = iptc['caption/abstract'].decode('utf-8')
-            item['tags'] = (item['tags'] + iptc['keywords'])
+                item['caption'] = decode_bytes(iptc['caption/abstract'])
+            for keyword in iptc['keywords']:
+                item['tags'].append(keyword.decode('utf-8'))
         items.append(item)
-    print('items: ', items)
+    return items
+
+def decode_bytes(bytes_object):
+    the_encoding = chardet.detect(bytes_object)['encoding']
+    try:
+        return bytes_object.decode("utf-8")
+    except Exception as e:
+        print(e)
+        return bytes_object.decode(the_encoding)
 
 def ingest(event, context):
     path = '20090509botanicgarden/20090509131026_botanic_001.JPG'
@@ -125,4 +135,59 @@ def ingest(event, context):
 
     return response
 
-parse_metadata()
+def handle():
+    paths = get_file_paths()
+    paths = paths[:25]
+    items = parse_metadata(paths)
+    # print('items: ', items)
+    update_database(items)
+
+def get_file_paths():
+    paths = sample_paths
+    directories = [
+        # '/Users/david/Pictures/20170727iceland/'
+    ]
+    for directory in directories:
+        paths = paths + get_directory_files(directory)
+    return paths
+
+def get_directory_files(directory):
+    file_paths = []
+    for (dirpath, dirnames, filenames) in walk(directory):
+        for filename in filenames:
+            file_paths.append(os.path.abspath(os.path.join(directory, filename)))
+        break
+    return file_paths
+
+def update_database(items):
+    print('Updating database...')
+    client = boto3.client('sdb')
+    simpledb_items = []
+    for item in items:
+        simpledb_items.append({
+            'Name': item['file_path'],
+            'Attributes': [
+                {
+                    'Name': 'headline',
+                    'Value': item['headline'],
+                    'Replace': True
+                },
+                {
+                    'Name': 'caption',
+                    'Value': item['caption'],
+                    'Replace': True
+                },
+                {
+                    'Name': 'tags',
+                    'Value': ','.join(item['tags']),
+                    'Replace': True
+                }
+            ]
+        })
+    response = client.batch_put_attributes(
+        DomainName='s3-archive',
+        Items=simpledb_items
+    )
+    print('response: ', response)
+
+handle()
