@@ -13,12 +13,9 @@ import math
 import time
 
 
-sample_paths = [
-    # TODO: accept paths as input
-]
-sample_directories = [
-    # TODO: accept directories as input
-]
+base_directory = ''
+sample_paths = []
+sample_directories = []
 
 def get_labeled_exif(exif):
     labeled = {}
@@ -81,6 +78,7 @@ def get_osx_tags(path):
 def parse_metadata(paths):
     items = []
     for path in paths:
+        full_path = base_directory + path
         item = {
             'file_path': path,
             'created_at': '',
@@ -91,22 +89,22 @@ def parse_metadata(paths):
             'longitude': ''
         } 
         # XMP
-        xmp = get_xmp(path)
+        xmp = get_xmp(full_path)
         if xmp:
             if 'description' in xmp:
                 item['caption'] = xmp['description']
         # EXIF
-        exif = get_exif(path)
+        exif = get_exif(full_path)
         if exif != False:
             if 'DateTimeOriginal' in exif:
                 item['created_at'] = exif['DateTimeOriginal']
         # OSX
-        item['tags'] = get_osx_tags(path)
+        item['tags'] = get_osx_tags(full_path)
         # IPTC
-        iptc = get_iptc(path)
+        iptc = get_iptc(full_path)
         if iptc:
             if iptc['headline']:
-                item['headline'] = decode_bytes(iptc['headline'], path)
+                item['headline'] = decode_bytes(iptc['headline'])
             if iptc['caption/abstract']:
                 item['caption'] = decode_bytes(iptc['caption/abstract'])
             for keyword in iptc['keywords']:
@@ -114,7 +112,7 @@ def parse_metadata(paths):
         items.append(item)
     return items
 
-def decode_bytes(bytes_object, other = None):
+def decode_bytes(bytes_object):
     try:
         return bytes_object.decode("utf-8")
     except Exception as e:
@@ -147,7 +145,7 @@ def handle():
     batch_count = 25
     paths = get_file_paths()
     print('paths: ' + str(len(paths)))
-    for i in range(0, math.ceil(len(paths)/batch_count)):
+    for i in range(553, math.ceil(len(paths)/batch_count)):
         print(i)
         time.sleep(1)
         start = i * batch_count
@@ -164,9 +162,9 @@ def get_file_paths():
 
 def get_directory_files(directory):
     file_paths = []
-    for (dirpath, dirnames, filenames) in walk(directory):
+    for (dirpath, dirnames, filenames) in walk(base_directory + directory):
         for filename in filenames:
-            file_paths.append(os.path.abspath(os.path.join(directory, filename)))
+            file_paths.append(os.path.join(directory, filename))
         break
     return file_paths
 
@@ -196,7 +194,7 @@ def update_database(items):
             ]
         })
     response = client.batch_put_attributes(
-        DomainName='s3-archive',
+        DomainName='photo-archive',
         Items=simpledb_items
     )
     print('response: ', response)
