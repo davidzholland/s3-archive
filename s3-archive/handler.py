@@ -11,6 +11,8 @@ from os import walk
 import chardet
 import math
 import time
+import platform
+from datetime import datetime
 
 
 base_directory = ''
@@ -96,8 +98,17 @@ def parse_metadata(paths):
         # EXIF
         exif = get_exif(full_path)
         if exif != False:
-            if 'DateTimeOriginal' in exif:
-                item['created_at'] = exif['DateTimeOriginal']
+            try:
+                if 'DateTimeOriginal' in exif:
+                    item['created_at'] = str(datetime.strptime(exif['DateTimeOriginal'], '%Y:%m:%d %H:%M:%S'))
+                elif 'DateTime' in exif:
+                    item['created_at'] = str(datetime.strptime(exif['DateTime'], '%Y:%m:%d %H:%M:%S'))
+            except Exception as e:
+                print(e)
+            if item['created_at'] == '':
+                file_creation_timestamp = get_file_creation_date(full_path)
+                item['created_at'] = str(datetime.fromtimestamp(file_creation_timestamp))
+
         # OSX
         item['tags'] = get_osx_tags(full_path)
         # IPTC
@@ -145,13 +156,18 @@ def handle():
     batch_count = 25
     paths = get_file_paths()
     print('paths: ' + str(len(paths)))
-    for i in range(553, math.ceil(len(paths)/batch_count)):
+    batches = math.ceil(len(paths)/batch_count)
+    print('batches: ' + str(batches))
+    for i in range(0, batches):
         print(i)
-        time.sleep(1)
         start = i * batch_count
         end = start + batch_count
+        print('start: ', start)
+        print('end: ', end)
+        print(paths[start:end])
         items = parse_metadata(paths[start:end])
         update_database(items)
+        time.sleep(.5)
 
 def get_file_paths():
     paths = sample_paths
@@ -163,6 +179,7 @@ def get_file_paths():
 def get_directory_files(directory):
     file_paths = []
     for (dirpath, dirnames, filenames) in walk(base_directory + directory):
+        print('filenames:', filenames)
         for filename in filenames:
             file_paths.append(os.path.join(directory, filename))
         break
@@ -190,6 +207,11 @@ def update_database(items):
                     'Name': 'tags',
                     'Value': ','.join(item['tags']),
                     'Replace': True
+                },
+                {
+                    'Name': 'created_at',
+                    'Value': item['created_at'],
+                    'Replace': True
                 }
             ]
         })
@@ -198,5 +220,22 @@ def update_database(items):
         Items=simpledb_items
     )
     print('response: ', response)
+
+def get_file_creation_date(path_to_file):
+    """
+    Try to get the date that a file was created, falling back to when it was
+    last modified if that isn't possible.
+    See http://stackoverflow.com/a/39501288/1709587 for explanation.
+    """
+    if platform.system() == 'Windows':
+        return os.path.getctime(path_to_file)
+    else:
+        stat = os.stat(path_to_file)
+        try:
+            return stat.st_birthtime
+        except AttributeError:
+            # We're probably on Linux. No easy way to get creation dates here,
+            # so we'll settle for when its content was last modified.
+            return stat.st_mtime
 
 handle()
