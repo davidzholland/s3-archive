@@ -80,7 +80,7 @@ def get_osx_tags(path):
 def parse_metadata(paths):
     items = []
     for path in paths:
-        full_path = base_directory + path
+        full_path = os.path.join(base_directory, path)
         item = {
             'file_path': path,
             'created_at': '',
@@ -164,7 +164,7 @@ def handle():
         end = start + batch_count
         print('start: ', start)
         print('end: ', end)
-        print(paths[start:end])
+        # print(paths[start:end])
         items = parse_metadata(paths[start:end])
         update_database(items)
         time.sleep(.5)
@@ -178,10 +178,12 @@ def get_file_paths():
 
 def get_directory_files(directory):
     file_paths = []
-    for (dirpath, dirnames, filenames) in walk(base_directory + directory):
-        print('filenames:', filenames)
+    for (dirpath, dirnames, filenames) in walk(os.path.join(base_directory, directory)):
         for filename in filenames:
             file_paths.append(os.path.join(directory, filename))
+        for dirname in dirnames:
+            sub_files = get_directory_files(os.path.join(directory, dirname))
+            file_paths = (file_paths + sub_files)
         break
     return file_paths
 
