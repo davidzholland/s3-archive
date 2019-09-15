@@ -9,10 +9,15 @@ from libxmp.utils import file_to_dict
 from libxmp import XMPFiles, consts
 from os import walk
 import chardet
+import math
+import time
 
 
 sample_paths = [
     # TODO: accept paths as input
+]
+sample_directories = [
+    # TODO: accept directories as input
 ]
 
 def get_labeled_exif(exif):
@@ -92,28 +97,31 @@ def parse_metadata(paths):
                 item['caption'] = xmp['description']
         # EXIF
         exif = get_exif(path)
-        if exif:
-            item['created_at'] = exif['DateTimeOriginal']
+        if exif != False:
+            if 'DateTimeOriginal' in exif:
+                item['created_at'] = exif['DateTimeOriginal']
         # OSX
         item['tags'] = get_osx_tags(path)
         # IPTC
         iptc = get_iptc(path)
         if iptc:
             if iptc['headline']:
-                item['headline'] = str(iptc['headline'], 'utf-8')
+                item['headline'] = decode_bytes(iptc['headline'], path)
             if iptc['caption/abstract']:
                 item['caption'] = decode_bytes(iptc['caption/abstract'])
             for keyword in iptc['keywords']:
-                item['tags'].append(keyword.decode('utf-8'))
+                item['tags'].append(decode_bytes(keyword))
         items.append(item)
     return items
 
-def decode_bytes(bytes_object):
-    the_encoding = chardet.detect(bytes_object)['encoding']
+def decode_bytes(bytes_object, other = None):
     try:
         return bytes_object.decode("utf-8")
     except Exception as e:
-        print(e)
+        # print(e)
+        the_encoding = chardet.detect(bytes_object)['encoding']
+        if the_encoding is None:
+            return ""
         return bytes_object.decode(the_encoding)
 
 def ingest(event, context):
@@ -136,17 +144,20 @@ def ingest(event, context):
     return response
 
 def handle():
+    batch_count = 25
     paths = get_file_paths()
-    paths = paths[:25]
-    items = parse_metadata(paths)
-    # print('items: ', items)
-    update_database(items)
+    print('paths: ' + str(len(paths)))
+    for i in range(0, math.ceil(len(paths)/batch_count)):
+        print(i)
+        time.sleep(1)
+        start = i * batch_count
+        end = start + batch_count
+        items = parse_metadata(paths[start:end])
+        update_database(items)
 
 def get_file_paths():
     paths = sample_paths
-    directories = [
-        # '/Users/david/Pictures/20170727iceland/'
-    ]
+    directories = sample_directories
     for directory in directories:
         paths = paths + get_directory_files(directory)
     return paths
