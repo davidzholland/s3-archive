@@ -17,7 +17,6 @@ from datetime import datetime
 
 base_directory = ''
 sample_paths = []
-sample_directories = []
 
 def get_labeled_exif(exif):
     labeled = {}
@@ -113,6 +112,8 @@ def parse_metadata(paths):
         item['tags'] = get_osx_tags(full_path)
         # IPTC
         iptc = get_iptc(full_path)
+        # print('full_path: ', full_path)
+        # print('iptc: ', iptc)
         if iptc:
             if iptc['headline']:
                 item['headline'] = decode_bytes(iptc['headline'])
@@ -126,12 +127,18 @@ def parse_metadata(paths):
 def decode_bytes(bytes_object):
     try:
         return bytes_object.decode("utf-8")
-    except Exception as e:
-        # print(e)
+    except:
+        return auto_decode(bytes_object)
+
+def auto_decode(bytes_object):
+    try:
         the_encoding = chardet.detect(bytes_object)['encoding']
         if the_encoding is None:
             return ""
         return bytes_object.decode(the_encoding)
+    except Exception as e:
+        print(e)
+        return str(bytes_object)
 
 def ingest(event, context):
     path = '20090509botanicgarden/20090509131026_botanic_001.JPG'
@@ -158,7 +165,7 @@ def handle():
     print('paths: ' + str(len(paths)))
     batches = math.ceil(len(paths)/batch_count)
     print('batches: ' + str(batches))
-    for i in range(0, batches):
+    for i in range(991, batches):
         print(i)
         start = i * batch_count
         end = start + batch_count
@@ -171,21 +178,27 @@ def handle():
 
 def get_file_paths():
     paths = sample_paths
-    directories = sample_directories
+    directories = get_immediate_subdirectories(base_directory)
     for directory in directories:
         paths = paths + get_directory_files(directory)
     return paths
 
 def get_directory_files(directory):
     file_paths = []
-    for (dirpath, dirnames, filenames) in walk(os.path.join(base_directory, directory)):
-        for filename in filenames:
-            file_paths.append(os.path.join(directory, filename))
-        for dirname in dirnames:
-            sub_files = get_directory_files(os.path.join(directory, dirname))
-            file_paths = (file_paths + sub_files)
-        break
+    if directory[:2] == '20' and directory[:4] >= '2011':
+        print('directory:', directory)
+        for (dirpath, dirnames, filenames) in walk(os.path.join(base_directory, directory)):
+            for filename in filenames:
+                file_paths.append(os.path.join(directory, filename))
+            for dirname in dirnames:
+                sub_files = get_directory_files(os.path.join(directory, dirname))
+                file_paths = (file_paths + sub_files)
+            break
     return file_paths
+
+def get_immediate_subdirectories(a_dir):
+    return [name for name in os.listdir(a_dir)
+        if os.path.isdir(os.path.join(a_dir, name))]
 
 def update_database(items):
     print('Updating database...')
@@ -197,22 +210,27 @@ def update_database(items):
             'Attributes': [
                 {
                     'Name': 'headline',
-                    'Value': item['headline'],
+                    'Value': item['headline'][:1024],
                     'Replace': True
                 },
                 {
                     'Name': 'caption',
-                    'Value': item['caption'],
+                    'Value': item['caption'][:1024],
                     'Replace': True
                 },
                 {
                     'Name': 'tags',
-                    'Value': ','.join(item['tags']),
+                    'Value': ','.join(item['tags'][:1024]),
                     'Replace': True
                 },
                 {
                     'Name': 'created_at',
                     'Value': item['created_at'],
+                    'Replace': True
+                },
+                {
+                    'Name': 'last_indexed_at',
+                    'Value': str(datetime.now()),
                     'Replace': True
                 }
             ]
