@@ -165,7 +165,7 @@ def handle():
     print('paths: ' + str(len(paths)))
     batches = math.ceil(len(paths)/batch_count)
     print('batches: ' + str(batches))
-    for i in range(991, batches):
+    for i in range(0, batches):
         print(i)
         start = i * batch_count
         end = start + batch_count
