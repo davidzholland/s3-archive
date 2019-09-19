@@ -15,7 +15,7 @@ module.exports.handle = async event => {
     where += ' OR tags LIKE "%' + keywords + '%" OR tags LIKE "%' + keywords.toLowerCase() + '%"';
     where += ' OR itemName() LIKE "%' + keywords + '%" OR itemName() LIKE "%' + keywords.toLowerCase() + '%"';
   }
-  const statement = 'select * from `photo-archive` ' + where + ' limit 5';
+  const statement = 'select * from `photo-archive` ' + where + ' limit 25';
   console.log('statement: ', statement);
   const results = await query(statement);
   return {

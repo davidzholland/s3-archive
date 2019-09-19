@@ -7,4 +7,5 @@
     display: inline-block;
     border: solid 1px #EEE;
     margin: 5px;
+    overflow: hidden;
 }

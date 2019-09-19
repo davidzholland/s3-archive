@@ -1,4 +1,4 @@
-const thumb_base_url = '';
+const thumb_base_url = 'file:///Users/david/Thumbs/';
 
 function getImgAttribute(img, name) {
     $(img.Attributes).each(function(idx, obj) {
