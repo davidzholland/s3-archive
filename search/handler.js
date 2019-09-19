@@ -1,13 +1,15 @@
 'use strict';
 
 var AWS = require("aws-sdk");
+var url = require('url');
 
 
 module.exports.handle = async event => {
   let where = '';
   const body = JSON.parse(event.body || event);
-  if (typeof body.q != 'undefined') {
-    const keywords = body.q;
+  const params = url.parse('?' + body, true).query;
+  if (typeof params.q != 'undefined') {
+    const keywords = params.q;
     where = ' WHERE caption LIKE "%' + keywords + '%" OR caption LIKE "%' + keywords.toLowerCase() + '%"';
     where += ' OR headline LIKE "%' + keywords + '%" OR headline LIKE "%' + keywords.toLowerCase() + '%"';
     where += ' OR tags LIKE "%' + keywords + '%" OR tags LIKE "%' + keywords.toLowerCase() + '%"';

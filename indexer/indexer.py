@@ -13,9 +13,11 @@ import math
 import time
 import platform
 from datetime import datetime
+import glob
 
 
 base_directory = ''
+thumb_directory = ''
 sample_paths = []
 
 def get_labeled_exif(exif):
@@ -107,6 +109,8 @@ def parse_metadata(paths):
             if item['created_at'] == '':
                 file_creation_timestamp = get_file_creation_date(full_path)
                 item['created_at'] = str(datetime.fromtimestamp(file_creation_timestamp))
+            if 'Orientation' in exif:
+                item['orientation'] = exif['Orientation']
 
         # OSX
         item['tags'] = get_osx_tags(full_path)
@@ -154,6 +158,7 @@ def handle():
         print('end: ', end)
         # print(paths[start:end])
         items = parse_metadata(paths[start:end])
+        create_thumbs(items)
         update_database(items)
         time.sleep(.5)
 
@@ -166,8 +171,8 @@ def get_file_paths():
 
 def get_directory_files(directory):
     file_paths = []
-    # if directory[:2] == '20' and directory[:4] <= '2017':
-    print('directory:', directory)
+    # if directory[:2] != '20' or directory[:4] > '2017':
+    #     return file_paths
     for (dirpath, dirnames, filenames) in walk(os.path.join(base_directory, directory)):
         for filename in filenames:
             file_paths.append(os.path.join(directory, filename))
@@ -180,6 +185,34 @@ def get_directory_files(directory):
 def get_immediate_subdirectories(a_dir):
     return [name for name in os.listdir(a_dir)
         if os.path.isdir(os.path.join(a_dir, name))]
+
+def create_thumbs(items):
+    for item in items:
+        path = item['file_path']
+        print(path)
+        print(path[:-4].lower())
+        if (path[-4:].lower() == '.jpg' or path[-5:].lower() == '.jpeg'):
+            img = Image.open(os.path.join(base_directory, path))
+            # convert to thumbnail image
+            img.thumbnail((250, 250), Image.ANTIALIAS)
+            img = apply_image_orientation(img, item)
+            thumb_path = os.path.join(thumb_directory, path)
+            print(thumb_path)
+            thumb_base_path = os.path.dirname(os.path.abspath(thumb_path))
+            print(thumb_base_path)
+            if not os.path.exists(thumb_base_path):
+                os.makedirs(thumb_base_path)
+            img.save(thumb_path, "JPEG")
+
+def apply_image_orientation(img, item):
+    if 'orientation' in item:
+        if item['orientation'] == 3:
+            img=img.rotate(180, expand=True)
+        elif item['orientation'] == 6:
+            img=img.rotate(270, expand=True)
+        elif item['orientation'] == 8:
+            img=img.rotate(90, expand=True)
+    return img
 
 def update_database(items):
     print('Updating database...')
