@@ -140,25 +140,6 @@ def auto_decode(bytes_object):
         print(e)
         return str(bytes_object)
 
-def ingest(event, context):
-    path = '20090509botanicgarden/20090509131026_botanic_001.JPG'
-    client = boto3.client('s3')
-    response = client.get_object(
-        Bucket=os.environ['BUCKET'],
-        Key=path
-    )
-    body = {
-        "message": "Go Serverless v1.0! Your function executed successfully!",
-        "input": event
-    }
-
-    response = {
-        "statusCode": 200,
-        "body": json.dumps(body)
-    }
-
-    return response
-
 def handle():
     batch_count = 25
     paths = get_file_paths()
@@ -185,15 +166,15 @@ def get_file_paths():
 
 def get_directory_files(directory):
     file_paths = []
-    if directory[:2] == '20' and directory[:4] >= '2011':
-        print('directory:', directory)
-        for (dirpath, dirnames, filenames) in walk(os.path.join(base_directory, directory)):
-            for filename in filenames:
-                file_paths.append(os.path.join(directory, filename))
-            for dirname in dirnames:
-                sub_files = get_directory_files(os.path.join(directory, dirname))
-                file_paths = (file_paths + sub_files)
-            break
+    # if directory[:2] == '20' and directory[:4] <= '2017':
+    print('directory:', directory)
+    for (dirpath, dirnames, filenames) in walk(os.path.join(base_directory, directory)):
+        for filename in filenames:
+            file_paths.append(os.path.join(directory, filename))
+        for dirname in dirnames:
+            sub_files = get_directory_files(os.path.join(directory, dirname))
+            file_paths = (file_paths + sub_files)
+        break
     return file_paths
 
 def get_immediate_subdirectories(a_dir):

@@ -1,4 +1,4 @@
-# s3-archive
+# indexer
 Maintains a searchable index of archived files.
 
 ### Prerequisite
@@ -12,9 +12,12 @@ Maintains a searchable index of archived files.
 ### Development
 
 1. Setup
-    1. `cd s3-archive`
-    2. `source .envs/bin/activate`
-    3. `pip install -r requirements.txt`
+    1. `source .envs/bin/activate`
+    2. `pip install -r requirements.txt`
 2. Install a new dependency
    1. `pip install <package>`
    2. `pip freeze > requirements.txt`
+
+### Run
+
+1. `python indexer.py`
