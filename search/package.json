@@ -1,0 +1,14 @@
+{
+  "name": "search",
+  "version": "1.0.0",
+  "description": "Search the photo archive",
+  "main": "handler.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "David Holland <davidzholland@gmail.com>",
+  "license": "ISC",
+  "devDependencies": {
+    "serverless": "^1.52.0"
+  }
+}

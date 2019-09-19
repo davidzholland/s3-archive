@@ -1,0 +1,20 @@
+service: search
+
+provider:
+  name: aws
+  runtime: nodejs10.x
+  iamRoleStatements:
+    - Effect: 'Allow'
+      Action:
+        - 'sdb:Select'
+      Resource:
+        - '*'
+
+functions:
+  search:
+    handler: handler.handle
+    description: Search the archive
+    events:
+      - http: 
+          path: search
+          method: post
