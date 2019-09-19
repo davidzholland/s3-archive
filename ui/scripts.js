@@ -29,7 +29,8 @@ $(function () {
         }).done(function(response) {
             $(response.Items).each(function(idx, obj) {
                 var html = '<div class="item">';
-                    html += '<img alt="' + getImgAltText(obj) + '" src="' + thumb_base_url + obj.Name + '" height="200" width="300" />';
+                    html += '<span class="helper"></span>';
+                    html += '<img alt="' + getImgAltText(obj) + '" src="' + thumb_base_url + obj.Name + '" />';
                     html += '</div>';
                 $("#items").append(html);
             });
