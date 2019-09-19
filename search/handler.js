@@ -13,6 +13,7 @@ module.exports.handle = async event => {
     where = ' WHERE caption LIKE "%' + keywords + '%" OR caption LIKE "%' + keywords.toLowerCase() + '%"';
     where += ' OR headline LIKE "%' + keywords + '%" OR headline LIKE "%' + keywords.toLowerCase() + '%"';
     where += ' OR tags LIKE "%' + keywords + '%" OR tags LIKE "%' + keywords.toLowerCase() + '%"';
+    where += ' OR itemName() LIKE "%' + keywords + '%" OR itemName() LIKE "%' + keywords.toLowerCase() + '%"';
   }
   const statement = 'select * from `photo-archive` ' + where + ' limit 5';
   console.log('statement: ', statement);
