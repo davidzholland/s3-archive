@@ -1,6 +1,8 @@
 const thumb_base_url = 'file:///Users/david/Thumbs/';
 let pageTokens = {};
 let currentPage = 1;
+let total = 0;
+const itemsPerPage = 25;
 
 function getImgAttribute(img, name) {
     $(img.Attributes).each(function(idx, obj) {
@@ -19,6 +21,8 @@ function getImgAltText(img) {
 }
 
 function search(page) {
+    updatePagination();
+    $("#next").attr('disabled', 'disabled');
     $("#items").empty();
     $("#search [name='nextToken']").val(pageTokens[page]);
     var post_url = $("#search").attr("action"); //get form action url
@@ -30,6 +34,8 @@ function search(page) {
         data : JSON.stringify(form_data),
         dataType: 'json'
     }).done(function(response) {
+        $("#items").empty();
+        total = response.total;
         $(response.results.Items).each(function(idx, obj) {
             pageTokens[page + 1] = response.results.NextToken;
             var thumb_path = thumb_base_url + obj.Name;
@@ -50,7 +56,24 @@ function search(page) {
                 html += '</div>';
             $("#items").append(html);
         });
+        updatePagination();
     });
+}
+
+function updatePagination() {
+    if (currentPage == 1) {
+        $("#prev").attr('disabled', 'disabled');
+    } else {
+        $("#prev").removeAttr('disabled');
+    }
+    if (currentPage >= total) {
+        $("#next").attr('disabled', 'disabled');
+    } else {
+        $("#next").removeAttr('disabled');
+    }
+    const start = ((currentPage - 1) * itemsPerPage) + 1;
+    const end = (start - 1) + $("#results .item").length;
+    $("#count").text(start + '-' + end + ' (total: ' + total + ')');
 }
 
 $(function () {
@@ -65,6 +88,7 @@ $(function () {
     });
     $("#search").submit(function(event) {
         pageTokens = {};
+        currentPage = 1;
         search(1);
         return false;
     });
