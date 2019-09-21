@@ -25,16 +25,19 @@ module.exports.handle = async event => {
   const order = ' AND created_at IS NOT NULL ORDER BY created_at DESC';
   const selectors = '*';
   const searchStatement = 'SELECT ' + selectors + ' FROM `' + domain + '` ' + where + order + ' limit 25';
-  // const countStatement = 'SELECT COUNT(*) FROM `' + domain + '` ' + where;
-  // const countResults = await query(countStatement);
   const searchResults = await query(searchStatement, nextToken);
+  const responseObject = {
+    total: total,
+    results: searchResults
+  };
+  if (typeof params.nextToken == 'undefined' || params.nextToken == '') {
+    const countStatement = 'SELECT COUNT(*) FROM `' + domain + '` ' + where;
+    const countResults = await query(countStatement);
+    responseObject['count'] = parseCountResults(countResults);
+  }
   return {
     statusCode: 200,
-    body: JSON.stringify({
-      total: total,
-      // count: parseCountResults(countResults),
-      results: searchResults
-    })
+    body: JSON.stringify(responseObject)
   };
 };
 

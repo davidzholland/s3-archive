@@ -2,6 +2,7 @@ const thumb_base_url = 'file:///Users/david/Thumbs/';
 let pageTokens = {};
 let currentPage = 1;
 let total = 0;
+let count = 0;
 const itemsPerPage = 25;
 
 function getImgAttribute(img, name) {
@@ -36,6 +37,9 @@ function search(page) {
     }).done(function(response) {
         $("#items").empty();
         total = response.total;
+        if (typeof response.count != 'undefined') {
+            count = response.count;
+        }
         $(response.results.Items).each(function(idx, obj) {
             pageTokens[page + 1] = response.results.NextToken;
             var thumb_path = thumb_base_url + obj.Name;
@@ -73,7 +77,8 @@ function updatePagination() {
     }
     const start = ((currentPage - 1) * itemsPerPage) + 1;
     const end = (start - 1) + $("#results .item").length;
-    $("#count").text(start + '-' + end + ' (total: ' + total + ')');
+    let countText = start + '-' + end + ' of ' + count + ' (total: ' + total + ')';
+    $("#count").text(countText);
 }
 
 $(function () {
