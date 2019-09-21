@@ -14,6 +14,7 @@ import time
 import platform
 from datetime import datetime
 import glob
+import rawpy
 
 
 base_directory = '/Users/david/Pictures/'
@@ -171,7 +172,7 @@ def get_file_paths():
 
 def get_directory_files(directory):
     file_paths = []
-    if directory[:2] != '20' or directory[:4] < '2018':
+    if directory[:2] != '20':
         return file_paths
     for (dirpath, dirnames, filenames) in walk(os.path.join(base_directory, directory)):
         for filename in filenames:
@@ -189,23 +190,35 @@ def get_immediate_subdirectories(a_dir):
 def create_thumbs(items):
     for item in items:
         path = item['file_path']
-        print(path)
-        print(path[:-4].lower())
-        if (path[-4:].lower() == '.jpg' or path[-5:].lower() == '.jpeg'):
-            try:
-                img = Image.open(os.path.join(base_directory, path))
-                # convert to thumbnail image
-                img.thumbnail((250, 250), Image.ANTIALIAS)
-                img = apply_image_orientation(img, item)
-                thumb_path = os.path.join(thumb_directory, path)
-                print(thumb_path)
-                thumb_base_path = os.path.dirname(os.path.abspath(thumb_path))
-                print(thumb_base_path)
-                if not os.path.exists(thumb_base_path):
-                    os.makedirs(thumb_base_path)
-                img.save(thumb_path, "JPEG")
-            except:
-                print('Unable to thumbnail: ' + path)
+        img = open_image(path)
+        if img is not None:
+            thumb_path = os.path.join(thumb_directory, path)
+            if thumb_path[-4:].lower() != '.jpg':
+                thumb_path = thumb_path + '.jpg'
+            create_thumbnail(img, thumb_path, item)
+
+def create_thumbnail(img, thumb_path, item):
+    try:
+        img.thumbnail((250, 250), Image.ANTIALIAS)
+        img = apply_image_orientation(img, item)
+        thumb_base_path = os.path.dirname(os.path.abspath(thumb_path))
+        if not os.path.exists(thumb_base_path):
+            os.makedirs(thumb_base_path)
+        img.save(thumb_path, "JPEG")
+    except:
+        print('Unable to thumbnail: ' + thumb_path)
+
+def open_image(path):
+    img = None
+    if (path[-4:].lower() == '.jpg' or path[-5:].lower() == '.jpeg'):
+        img = Image.open(os.path.join(base_directory, path))
+    elif (path[-4:].lower() == '.nef'):
+        print('parse NEF')
+        raw = rawpy.imread(os.path.join(base_directory, path))
+        rgb = raw.postprocess()
+        img = Image.fromarray(rgb) # Pillow image
+    return img
+
 
 def apply_image_orientation(img, item):
     if 'orientation' in item:

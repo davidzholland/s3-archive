@@ -28,9 +28,21 @@ $(function () {
             dataType: 'json'
         }).done(function(response) {
             $(response.Items).each(function(idx, obj) {
+                var thumb_path = thumb_base_url + obj.Name;
+                if (obj.Name.toLowerCase().substr(-4) != '.jpg') {
+                    thumb_path += '.jpg';
+                }
+                var placeholder_path = 'https://image.flaticon.com/icons/png/512/23/23765.png';
+                if (obj.Name.toLowerCase().substr(-4) == '.jpg' || obj.Name.toLowerCase().substr(-5) == '.jpeg') {
+                    placeholder_path = 'https://image.flaticon.com/icons/png/512/29/29264.png';
+                } else if (obj.Name.toLowerCase().substr(-4) == '.zip') {
+                    placeholder_path = 'https://image.flaticon.com/icons/svg/28/28814.svg';
+                }
                 var html = '<div class="item">';
                     html += '<span class="helper"></span>';
-                    html += '<img alt="' + getImgAltText(obj) + '" src="' + thumb_base_url + obj.Name + '" />';
+                    html += '<object data="' + thumb_path + '" type="image/jpg" alt="' + getImgAltText(obj) + '" title="' + getImgAltText(obj) + '">';
+                    html += '<img src="' + placeholder_path + '" height="50" />';
+                    html += '</object>';
                     html += '</div>';
                 $("#items").append(html);
             });
