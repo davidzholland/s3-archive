@@ -17,12 +17,12 @@ module.exports.handle = async event => {
   // KEYWORD MATCHING
   where = '';
   if (typeof params.q != 'undefined' && params.q != '') {
-    const keywords = params.q;
+    const keywords = params.q.toLowerCase();
     where += ' (';
-    where += 'caption LIKE "%' + keywords + '%" OR caption LIKE "%' + keywords.toLowerCase() + '%"';
-    where += ' OR headline LIKE "%' + keywords + '%" OR headline LIKE "%' + keywords.toLowerCase() + '%"';
-    where += ' OR tags LIKE "%' + keywords + '%" OR tags LIKE "%' + keywords.toLowerCase() + '%"';
-    where += ' OR itemName() LIKE "%' + keywords + '%" OR itemName() LIKE "%' + keywords.toLowerCase() + '%"';
+    where += 'lc_caption LIKE "%' + keywords + '%"';
+    where += ' OR lc_headline LIKE "%' + keywords + '%"';
+    where += ' OR lc_tags LIKE "%' + keywords + '%"';
+    where += ' OR lc_file_path LIKE "%' + keywords + '%"';
     where += ')';
   }
   // SORT
