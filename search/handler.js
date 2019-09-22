@@ -24,7 +24,7 @@ module.exports.handle = async event => {
   }
   const order = ' AND created_at IS NOT NULL ORDER BY created_at DESC';
   const selectors = '*';
-  const searchStatement = 'SELECT ' + selectors + ' FROM `' + domain + '` ' + where + order + ' limit 25';
+  const searchStatement = 'SELECT ' + selectors + ' FROM `' + domain + '` ' + where + order + ' limit 100';
   const searchResults = await query(searchStatement, nextToken);
   const responseObject = {
     total: total,

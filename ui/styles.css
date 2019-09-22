@@ -1,17 +1,84 @@
+body {
+    margin: 0;
+    font-family: Helvetica, Arial, sans-serif;
+}
+html {
+    height: 100%;
+}
+body {
+    height: 100%;
+}
+#toolbar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 21px;
+    width: 100%;
+    z-index: 20;
+    background: #efefef;
+    padding: 5px;
+}
+#results {
+    z-index: 10;
+    margin-top: 38px;
+    text-align: center;
+    overflow: auto;
+    height: 100%;
+    width: 100%;
+}
+#results .overlay {
+    display: none;
+    height: 100%;
+    width: 100%;
+    background: #FFF;
+    position: absolute;
+    opacity: .6;
+}
+#results.loading .overlay {
+    display: block;
+}
+#search {
+    display: inline-block;
+    margin-right: 50px;
+}
+.pagination {
+    display: inline-block;
+    font-size: .75em;
+    color: #333;
+}
 #items .item {
+    width: 250px;
+    height: 317px;
+    overflow: hidden;
+    display: inline-block;
+    margin: 5px 5px 25px 5px;
+    border: solid 1px #EEE;
+}
+#items .thumb {
     display: inline-block;
     height: 250px;
     width: 250px;
-    margin: 5px;
-    border: solid 1px #EEE;
-    overflow: hidden;
+    /* overflow: hidden; */
     display: inline-block;
     text-align: center;
 }
-#items .item object {
+#items .thumb object {
     vertical-align: middle;
     max-height: 250px;
     max-width: 250px;
+}
+#items .item .caption {
+    max-height: 75px;
+    font-size: .7em;
+    color: #666;
+    text-align: left;
+    overflow: auto;
+    margin: 8px;
+}
+#items .item .caption ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
 }
 .helper {
     display: inline-block;

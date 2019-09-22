@@ -1,9 +1,10 @@
 const thumb_base_url = 'file:///Users/david/Thumbs/';
+const orig_base_url = '/Volumes/Public/Shared Pictures/';
 let pageTokens = {};
 let currentPage = 1;
 let total = 0;
 let count = 0;
-const itemsPerPage = 25;
+const itemsPerPage = 100;
 
 function getImgAttribute(img, name) {
     $(img.Attributes).each(function(idx, obj) {
@@ -22,9 +23,10 @@ function getImgAltText(img) {
 }
 
 function search(page) {
-    updatePagination();
+    updatePaginationButtons();
+    updatePaginationCounts(true);
     $("#next").attr('disabled', 'disabled');
-    $("#items").empty();
+    $("#results").addClass('loading');
     $("#search [name='nextToken']").val(pageTokens[page]);
     var post_url = $("#search").attr("action"); //get form action url
     var request_method = $("#search").attr("method"); //get form GET/POST method
@@ -43,6 +45,7 @@ function search(page) {
         $(response.results.Items).each(function(idx, obj) {
             pageTokens[page + 1] = response.results.NextToken;
             var thumb_path = thumb_base_url + obj.Name;
+            var orig_path = orig_base_url + obj.Name;
             if (obj.Name.toLowerCase().substr(-4) != '.jpg') {
                 thumb_path += '.jpg';
             }
@@ -53,32 +56,65 @@ function search(page) {
                 placeholder_path = 'https://image.flaticon.com/icons/svg/28/28814.svg';
             }
             var html = '<div class="item">';
+                html += '<div class="thumb">';
                 html += '<span class="helper"></span>';
                 html += '<object data="' + thumb_path + '" type="image/jpg" alt="' + getImgAltText(obj) + '" title="' + getImgAltText(obj) + '">';
                 html += '<img src="' + placeholder_path + '" height="50" />';
                 html += '</object>';
                 html += '</div>';
+                html += '<div class="caption"><ul>';
+                html += '<li>original: ' + orig_path + '</li>';
+                for (const attribute of obj.Attributes) {
+                    if (attribute.Value != '') {
+                        html += '<li>' + attribute.Name + ': ' + attribute.Value + '</li>';
+                    }
+                }
+                html += '</ul></div>';
+                html += '</div>';
             $("#items").append(html);
         });
-        updatePagination();
+        updatePaginationButtons();
+        updatePaginationCounts();
+        $("#results").animate({ scrollTop: 0 }, "slow", function() {
+            $("#results").removeClass('loading');
+        });
     });
 }
 
-function updatePagination() {
+function updatePaginationButtons() {
     if (currentPage == 1) {
         $("#prev").attr('disabled', 'disabled');
     } else {
         $("#prev").removeAttr('disabled');
     }
-    if (currentPage >= total) {
+    if (currentPage >= Math.ceil(count / itemsPerPage)) {
         $("#next").attr('disabled', 'disabled');
     } else {
         $("#next").removeAttr('disabled');
     }
+}
+
+function updatePaginationCounts(loading = false) {
     const start = ((currentPage - 1) * itemsPerPage) + 1;
-    const end = (start - 1) + $("#results .item").length;
-    let countText = start + '-' + end + ' of ' + count + ' (total: ' + total + ')';
+    let end = (start - 1) + $("#results .item").length;
+    if (end > count) {
+        end = count;
+    }
+    let countText = 'No matched results';
+    if (loading) {
+        countText = 'Loading...';
+    }
+    if (end > 0) {
+        countText = numberWithCommas(start) + '-' + numberWithCommas(end) + ' of ' + numberWithCommas(count);
+    }
+    if (total > count) {
+        countText += ' (total: ' + numberWithCommas(total) + ')';
+    }
     $("#count").text(countText);
+}
+
+function numberWithCommas(x) {
+    return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 }
 
 $(function () {
@@ -97,4 +133,5 @@ $(function () {
         search(1);
         return false;
     });
+    search(1);
 });
