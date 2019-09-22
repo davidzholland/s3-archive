@@ -85,3 +85,12 @@ body {
     height: 100%;
     vertical-align: middle;
 }
+.pagination .pages ul {
+    margin: 0;
+    padding: 0;
+    display: inline-block;
+}
+.pagination .pages li {
+    display: inline-block;
+    margin-right: 2px;
+}

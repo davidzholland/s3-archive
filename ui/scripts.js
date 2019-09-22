@@ -1,6 +1,5 @@
 const thumb_base_url = 'file:///Users/david/Thumbs/';
 const orig_base_url = '/Volumes/Public/Shared Pictures/';
-let pageTokens = {};
 let currentPage = 1;
 let total = 0;
 let count = 0;
@@ -27,7 +26,7 @@ function search(page) {
     updatePaginationCounts(true);
     $("#next").attr('disabled', 'disabled');
     $("#results").addClass('loading');
-    $("#search [name='nextToken']").val(pageTokens[page]);
+    $("#search [name='page']").val(page);
     var post_url = $("#search").attr("action"); //get form action url
     var request_method = $("#search").attr("method"); //get form GET/POST method
     var form_data = $("#search").serialize(); //Encode form elements for submission
@@ -43,7 +42,6 @@ function search(page) {
             count = response.count;
         }
         $(response.results.Items).each(function(idx, obj) {
-            pageTokens[page + 1] = response.results.NextToken;
             var thumb_path = thumb_base_url + obj.Name;
             var orig_path = orig_base_url + obj.Name;
             if (obj.Name.toLowerCase().substr(-4) != '.jpg') {
@@ -75,9 +73,13 @@ function search(page) {
         });
         updatePaginationButtons();
         updatePaginationCounts();
-        $("#results").animate({ scrollTop: 0 }, "slow", function() {
+        if ($("#results").scrollTop() == 0) {
             $("#results").removeClass('loading');
-        });
+        } else {
+            $("#results").animate({ scrollTop: 0 }, "slow", function() {
+                $("#results").removeClass('loading');
+            });
+        }
     });
 }
 
@@ -111,6 +113,33 @@ function updatePaginationCounts(loading = false) {
         countText += ' (total: ' + numberWithCommas(total) + ')';
     }
     $("#count").text(countText);
+    // Pages links
+    let pagesHTML = '<ul>';
+    const pages = Math.ceil(count / itemsPerPage);
+    const pagesToDisplay = 10;
+    let startPage = currentPage - Math.floor(pagesToDisplay / 2);
+    if (startPage < 1) {
+        startPage = 1;
+    }
+    let endPage = startPage + pagesToDisplay;
+    if (endPage > pages) {
+        endPage = pages;
+    }
+    for (let page = startPage; page <= endPage; page++) {
+        if (page == currentPage) {
+            pageHTML = '<b>' + page + '</b>';
+        } else {
+            pageHTML = '<a href="" data-page="' + page + '">' + page + '</a>';
+        }
+        pagesHTML += '<li>' + pageHTML + '</li>';
+    }
+    pagesHTML += '</ul>';
+    $(".pages").html(pagesHTML);
+    $(".pages a").click(function() {
+        currentPage = Number($(this).attr('data-page'));
+        search(currentPage);
+        return false;
+    });
 }
 
 function numberWithCommas(x) {
@@ -128,7 +157,6 @@ $(function () {
         search(currentPage);
     });
     $("#search").submit(function(event) {
-        pageTokens = {};
         currentPage = 1;
         search(1);
         return false;

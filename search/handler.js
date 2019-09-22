@@ -3,36 +3,52 @@
 var AWS = require("aws-sdk");
 var url = require('url');
 var domain = 'photo-archive';
+const itemsPerPage = 100;
 
 module.exports.handle = async event => {
   const total = await getTotal();
   let where = '';
   const body = JSON.parse(event.body || event);
   const params = url.parse('?' + body, true).query;
-  let nextToken = '';
-  if (typeof params.nextToken != 'undefined') {
-    nextToken = params.nextToken;
+  let page = 1;
+  if (typeof params.page != 'undefined') {
+    page = params.page;
   }
-  if (typeof params.q != 'undefined') {
+  // KEYWORD MATCHING
+  where = '';
+  if (typeof params.q != 'undefined' && params.q != '') {
     const keywords = params.q;
-    where = ' WHERE (';
+    where += ' (';
     where += 'caption LIKE "%' + keywords + '%" OR caption LIKE "%' + keywords.toLowerCase() + '%"';
     where += ' OR headline LIKE "%' + keywords + '%" OR headline LIKE "%' + keywords.toLowerCase() + '%"';
     where += ' OR tags LIKE "%' + keywords + '%" OR tags LIKE "%' + keywords.toLowerCase() + '%"';
     where += ' OR itemName() LIKE "%' + keywords + '%" OR itemName() LIKE "%' + keywords.toLowerCase() + '%"';
     where += ')';
   }
-  const order = ' AND created_at IS NOT NULL ORDER BY created_at DESC';
+  // SORT
+  if (where != '') {
+    where += ' AND ';
+  }
+  where += ' created_at IS NOT NULL ORDER BY created_at DESC';
+  // FORMAT WHERE CLAUSE
+  if (where != '') {
+    where = ' WHERE ' + where;
+  }
   const selectors = '*';
-  const searchStatement = 'SELECT ' + selectors + ' FROM `' + domain + '` ' + where + order + ' limit 100';
+  const searchStatement = 'SELECT ' + selectors + ' FROM `' + domain + '` ' + where + ' limit ' + itemsPerPage;
+  const offset = (page - 1) * itemsPerPage;
+  let nextToken = '';
+  if (offset > 0) {
+    nextToken = await getNextTokenForOffset(where, offset);
+  }
   const searchResults = await query(searchStatement, nextToken);
   const responseObject = {
     total: total,
     results: searchResults
   };
-  if (typeof params.nextToken == 'undefined' || params.nextToken == '') {
+  if (typeof params.page == 'undefined' || params.page == '' || params.page == 1) {
     const countStatement = 'SELECT COUNT(*) FROM `' + domain + '` ' + where;
-    const countResults = await query(countStatement);
+    const countResults = await query(countStatement, '');
     responseObject['count'] = parseCountResults(countResults);
   }
   return {
@@ -69,4 +85,10 @@ function query(expression, nextToken) {
       else     resolve(data); // successful response
     });
   });
+}
+
+async function getNextTokenForOffset(where, offset) {
+  const statement = 'SELECT COUNT(*) FROM `' + domain + '` ' + where + ' LIMIT ' + offset;
+  const results = await query(statement, '');
+  return results.NextToken;
 }

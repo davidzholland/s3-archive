@@ -8,11 +8,12 @@
         <div id="toolbar">
             <form id="search" action="https://13pq7xox65.execute-api.us-east-1.amazonaws.com/test/search" method="POST">
                 <input type="text" name="q" />
-                <input type="hidden" name="nextToken" value="" />
+                <input type="hidden" name="page" value="1" />
                 <input type="submit" name="search" />
             </form>
             <div class="pagination">
                 <button id="prev" type="button" disabled="disabled">Prev</button>
+                <span class="pages"></span>
                 <button id="next" type="button" disabled="disabled">Next</button>
                 <span id="count"></span>
             </div>
