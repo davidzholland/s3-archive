@@ -260,13 +260,28 @@ def update_database(items):
                     'Replace': True
                 },
                 {
+                    'Name': 'lc_headline',
+                    'Value': item['headline'][:1024].lower(),
+                    'Replace': True
+                },
+                {
                     'Name': 'caption',
                     'Value': item['caption'][:1024],
                     'Replace': True
                 },
                 {
+                    'Name': 'lc_caption',
+                    'Value': item['caption'][:1024].lower(),
+                    'Replace': True
+                },
+                {
                     'Name': 'tags',
                     'Value': ','.join(item['tags'][:1024]),
+                    'Replace': True
+                },
+                {
+                    'Name': 'lc_tags',
+                    'Value': ','.join(item['tags'][:1024].lower()),
                     'Replace': True
                 },
                 {
@@ -396,5 +411,8 @@ def parseSDBItemAttributes(item):
 # TODO: Identify recently updated directories/files for re-indexing
 # TODO: Lowercase all search values in database and lowercase all provided search terms
 
-while get_remaining_to_lowercase() > 0:
-    copy_to_lowercase_columns()
+# remaining_count = get_remaining_to_lowercase()
+# while remaining_count > 0:
+#     copy_to_lowercase_columns()
+#     remaining_count = remaining_count - 25
+#     print('remaining_count: ', remaining_count)
