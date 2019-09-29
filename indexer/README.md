@@ -14,6 +14,10 @@ Maintains a searchable index of archived files.
 1. Setup
     1. `source .envs/bin/activate`
     2. `pip install -r requirements.txt`
+    3. Specify where the photos and thumbs are located.
+       1. Create a directory for thumbnails.
+       2. `cp .env.example .env`
+       3. Change the paths to reflect your system.
 2. Install a new dependency
    1. `pip install <package>`
    2. `pip freeze > requirements.txt`
