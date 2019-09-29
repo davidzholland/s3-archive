@@ -409,7 +409,6 @@ directories_1900s = list(filter(lambda x: x.startswith('19'), directories))
 allowed_directories = directories_2000s + directories_1900s
 rethumb = False
 print(allowed_directories)
-exit()
 
 while len(allowed_directories) > 0:
     directory = allowed_directories.pop(0)
