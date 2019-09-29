@@ -16,9 +16,8 @@ from datetime import datetime
 import glob
 import rawpy
 from psd_tools import PSDImage
+from dotenv import load_dotenv
 
-base_directory = '/Users/david/Pictures/'
-thumb_directory = '/Users/david/Thumbs/'
 
 def get_labeled_exif(exif):
     labeled = {}
@@ -144,7 +143,7 @@ def auto_decode(bytes_object):
         print(e)
         return str(bytes_object)
 
-def handle(directory):
+def handle(directory, rethumb = False):
     batch_count = 25
     paths = get_file_paths(directory)
     if (len(paths) == 0):
@@ -153,11 +152,9 @@ def handle(directory):
     batches = math.ceil(len(paths)/batch_count)
     print('batches: ' + str(batches))
     for i in range(0, batches):
-        print(i)
         start = i * batch_count
         end = start + batch_count
-        print('start: ', start)
-        print('end: ', end)
+        print('batch: ', i, str(start) + '-' + str(end))
         print(paths[start:end][0])
         existing_thumbs = 0
         for path in paths[start:end]:
@@ -165,7 +162,7 @@ def handle(directory):
             if os.path.exists(thumb_path):
                 existing_thumbs += 1
         # print('existing_thumbs: ', existing_thumbs)
-        if existing_thumbs == 0:
+        if existing_thumbs == 0 or rethumb == True:
             items = parse_metadata(paths[start:end])
             # print('items: ', items)
             create_thumbs(items)
@@ -400,15 +397,22 @@ def parseSDBItemAttributes(item):
         attributes[key] = attribute['Value']
     return attributes
 
+
+# Get user settings
+load_dotenv()
+base_directory = os.getenv('BASE_DIRECTORY')
+thumb_directory = os.getenv('THUMB_DIRECTORY')
 # Get all directories starting with the year 20** or 19**
 directories = get_immediate_subdirectories(base_directory)
 directories_2000s = list(filter(lambda x: x.startswith('20'), directories))
 directories_1900s = list(filter(lambda x: x.startswith('19'), directories))
 allowed_directories = directories_2000s + directories_1900s
+rethumb = False
 print(allowed_directories)
+exit()
 
 while len(allowed_directories) > 0:
     directory = allowed_directories.pop(0)
-    handle(directory)
+    handle(directory, rethumb)
 
 # TODO: Identify recently updated directories/files for re-indexing
