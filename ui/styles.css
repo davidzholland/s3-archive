@@ -48,7 +48,6 @@ body {
 }
 #items .item {
     width: 250px;
-    height: 317px;
     overflow: hidden;
     display: inline-block;
     margin: 5px 5px 25px 5px;
@@ -56,23 +55,23 @@ body {
 }
 #items .thumb {
     display: inline-block;
-    height: 250px;
-    width: 250px;
-    /* overflow: hidden; */
+    height: 167px;
+    /* width: 250px; */
+    overflow: hidden;
     display: inline-block;
     text-align: center;
 }
 #items .thumb object {
-    vertical-align: middle;
-    max-height: 250px;
-    max-width: 250px;
+    /* vertical-align: middle; */
+    max-height: 100%;
+    /* max-width: 250px; */
 }
 #items .item .caption {
-    max-height: 75px;
+    height: 75px;
     font-size: .7em;
     color: #666;
     text-align: left;
-    overflow: auto;
+    /* overflow: auto; */
     margin: 8px;
 }
 #items .item .caption ul {

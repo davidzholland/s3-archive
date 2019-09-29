@@ -15,15 +15,10 @@ import platform
 from datetime import datetime
 import glob
 import rawpy
+from psd_tools import PSDImage
 
-
-# base_directory = '/Users/david/Pictures/'
-base_directory = '/Volumes/Public/Shared Pictures/'
+base_directory = '/Users/david/Pictures/'
 thumb_directory = '/Users/david/Thumbs/'
-sample_paths = []
-allowed_directory_patterns = [
-    '20180915rockawayhockey'
-]
 
 def get_labeled_exif(exif):
     labeled = {}
@@ -149,9 +144,9 @@ def auto_decode(bytes_object):
         print(e)
         return str(bytes_object)
 
-def handle():
+def handle(directory):
     batch_count = 25
-    paths = get_file_paths()
+    paths = get_file_paths(directory)
     if (len(paths) == 0):
         return
     print('paths: ' + str(len(paths)))
@@ -166,19 +161,21 @@ def handle():
         print(paths[start:end][0])
         existing_thumbs = 0
         for path in paths[start:end]:
-            thumb_path = os.path.join(thumb_directory, path)
+            thumb_path = get_thumb_path(os.path.join(thumb_directory, path))
             if os.path.exists(thumb_path):
                 existing_thumbs += 1
+        # print('existing_thumbs: ', existing_thumbs)
         if existing_thumbs == 0:
             items = parse_metadata(paths[start:end])
+            # print('items: ', items)
             create_thumbs(items)
-            # update_database(items)
+            update_database(items)
             time.sleep(.5)
         else:
             print('Already thumbs in this batch: ' + str(existing_thumbs))
 
-def get_file_paths():
-    paths = get_directory_files(allowed_directory_patterns[0], allowed_directory_patterns)
+def get_file_paths(directory):
+    paths = get_directory_files(directory)
     # print('get_file_paths: ', len(paths))
     return paths
 
@@ -187,7 +184,7 @@ def get_directory_files(directory, allowed_patterns = []):
     for pattern in allowed_patterns:
         if directory[:len(pattern)] != pattern:
             return file_paths
-    for (dirpath, dirnames, filenames) in walk(os.path.join(base_directory, directory), allowed_patterns):
+    for (dirpath, dirnames, filenames) in walk(os.path.join(base_directory, directory)):
         for filename in filenames:
             if filename[0:1] != '.':
                 file_paths.append(os.path.join(directory, filename))
@@ -207,10 +204,14 @@ def create_thumbs(items):
         path = item['file_path']
         img = open_image(path)
         if img is not None:
-            thumb_path = os.path.join(thumb_directory, path)
-            if thumb_path[-4:].lower() != '.jpg':
-                thumb_path = thumb_path + '.jpg'
+            thumb_path = get_thumb_path(os.path.join(thumb_directory, path))
             create_thumbnail(img, thumb_path, item)
+
+def get_thumb_path(path):
+    thumb_path = path
+    if thumb_path[-4:].lower() != '.jpg':
+        thumb_path = thumb_path + '.jpg'
+    return thumb_path
 
 def create_thumbnail(img, thumb_path, item):
     try:
@@ -225,13 +226,17 @@ def create_thumbnail(img, thumb_path, item):
 
 def open_image(path):
     img = None
+    img_full_path = os.path.join(base_directory, path)
     try:
         if (path[-4:].lower() == '.jpg' or path[-5:].lower() == '.jpeg'):
-            img = Image.open(os.path.join(base_directory, path))
+            img = Image.open(img_full_path)
         elif (path[-4:].lower() == '.nef'):
-            raw = rawpy.imread(os.path.join(base_directory, path))
+            raw = rawpy.imread(img_full_path)
             rgb = raw.postprocess()
             img = Image.fromarray(rgb) # Pillow image
+        elif (path[-4:].lower() == '.psd'):
+            psd = PSDImage.load(img_full_path)
+            img = psd.as_PIL()
     except:
         print('Unable to open image: ' + path)
     return img
@@ -255,6 +260,11 @@ def update_database(items):
             'Name': item['file_path'],
             'Attributes': [
                 {
+                    'Name': 'lc_file_path',
+                    'Value': item['file_path'][:1024].lower(),
+                    'Replace': True
+                },
+                {
                     'Name': 'headline',
                     'Value': item['headline'][:1024],
                     'Replace': True
@@ -276,12 +286,12 @@ def update_database(items):
                 },
                 {
                     'Name': 'tags',
-                    'Value': ','.join(item['tags'][:1024]),
+                    'Value': ','.join(item['tags'])[:1024],
                     'Replace': True
                 },
                 {
                     'Name': 'lc_tags',
-                    'Value': ','.join(item['tags'][:1024].lower()),
+                    'Value': ','.join(item['tags'])[:1024].lower(),
                     'Replace': True
                 },
                 {
@@ -390,29 +400,15 @@ def parseSDBItemAttributes(item):
         attributes[key] = attribute['Value']
     return attributes
 
-# unthumbed_directories = get_to_be_thumbed_directories()
-# allowed_directory_patterns = sorted(unthumbed_directories, reverse=True)
-# to_finish_thumbnailing = [
-#     '20180624iphone',
-#     '20180209iphone2',
-#     '20151002nyc',
-#     '20151006honeymoon',
-#     '20151120passport',
-#     '20151225five-weddings',
-#     '20090413easter'
-# ]
-# allowed_directory_patterns = to_finish_thumbnailing
-# print(allowed_directory_patterns)
-# while len(allowed_directory_patterns) > 0:
-#     allowed_directory_patterns = [ allowed_directory_patterns.pop(0) ]
-#     print('allowed_directory_patterns', allowed_directory_patterns)
-#     handle()
+# Get all directories starting with the year 20** or 19**
+directories = get_immediate_subdirectories(base_directory)
+directories_2000s = list(filter(lambda x: x.startswith('20'), directories))
+directories_1900s = list(filter(lambda x: x.startswith('19'), directories))
+allowed_directories = directories_2000s + directories_1900s
+print(allowed_directories)
+
+while len(allowed_directories) > 0:
+    directory = allowed_directories.pop(0)
+    handle(directory)
 
 # TODO: Identify recently updated directories/files for re-indexing
-# TODO: Lowercase all search values in database and lowercase all provided search terms
-
-# remaining_count = get_remaining_to_lowercase()
-# while remaining_count > 0:
-#     copy_to_lowercase_columns()
-#     remaining_count = remaining_count - 25
-#     print('remaining_count: ', remaining_count)
