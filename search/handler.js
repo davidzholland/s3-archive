@@ -60,19 +60,36 @@ function generateKeywordWhereClause(keywordString) {
   // Build where clause
   let where = '';
   for (const keyTerm of keyTerms) {
+    const bindVariable = keyTermToBindVariable(keyTerm);
     let keyTermWhere = ' (';
     keyTermWhere += 'lc_caption LIKE ?';
     keyTermWhere += ' OR lc_headline LIKE ?';
     keyTermWhere += ' OR lc_tags LIKE ?';
     keyTermWhere += ' OR lc_file_path LIKE ?';
     keyTermWhere += ')';
-    keyTermWhere = SqlString.format(keyTermWhere, Array(4).fill('%' + keyTerm + '%'));
+    keyTermWhere = SqlString.format(keyTermWhere, Array(4).fill(bindVariable));
     if (where != '') {
       where += ' AND ';
     }
     where += keyTermWhere;
   }
   return where;
+}
+
+function keyTermToBindVariable(term) {
+  let prefix = '%';
+  let suffix = '%';
+  let start = 0;
+  let end = term.length;
+  if (term.substr(0, 1) == '^') {
+      prefix = '';
+      start = 1;
+  }
+  if (term.substr(-1) == '$') {
+      suffix = '';
+      end = term.length - 1;
+  }
+  return prefix + term.substring(start, end) + suffix;
 }
 
 function parseKeywords(queryString) {
