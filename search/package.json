@@ -10,5 +10,8 @@
   "license": "ISC",
   "devDependencies": {
     "serverless": "^1.52.0"
+  },
+  "dependencies": {
+    "sqlstring": "^2.3.1"
   }
 }
