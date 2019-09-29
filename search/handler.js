@@ -2,6 +2,7 @@
 
 var AWS = require("aws-sdk");
 var url = require('url');
+var SqlString = require('sqlstring');
 var domain = 'photo-archive';
 const itemsPerPage = 100;
 
@@ -18,12 +19,7 @@ module.exports.handle = async event => {
   where = '';
   if (typeof params.q != 'undefined' && params.q != '') {
     const keywords = params.q.toLowerCase();
-    where += ' (';
-    where += 'lc_caption LIKE "%' + keywords + '%"';
-    where += ' OR lc_headline LIKE "%' + keywords + '%"';
-    where += ' OR lc_tags LIKE "%' + keywords + '%"';
-    where += ' OR lc_file_path LIKE "%' + keywords + '%"';
-    where += ')';
+    where += generateKeywordWhereClause(keywords)
   }
   // SORT
   if (where != '') {
@@ -56,6 +52,88 @@ module.exports.handle = async event => {
     body: JSON.stringify(responseObject)
   };
 };
+
+function generateKeywordWhereClause(keywordString) {
+  // First, detect quote wrapped terms
+  const keyTerms = parseKeywords(keywordString);
+  // TODO: hanle wildcards
+  // Build where clause
+  let where = '';
+  for (const keyTerm of keyTerms) {
+    const bindVariable = keyTermToBindVariable(keyTerm);
+    let keyTermWhere = ' (';
+    keyTermWhere += 'lc_caption LIKE ?';
+    keyTermWhere += ' OR lc_headline LIKE ?';
+    keyTermWhere += ' OR lc_tags LIKE ?';
+    keyTermWhere += ' OR lc_file_path LIKE ?';
+    keyTermWhere += ')';
+    keyTermWhere = SqlString.format(keyTermWhere, Array(4).fill(bindVariable));
+    if (where != '') {
+      where += ' AND ';
+    }
+    where += keyTermWhere;
+  }
+  return where;
+}
+
+function keyTermToBindVariable(term) {
+  let prefix = '%';
+  let suffix = '%';
+  let start = 0;
+  let end = term.length;
+  if (term.substr(0, 1) == '^') {
+      prefix = '';
+      start = 1;
+  }
+  if (term.substr(-1) == '$') {
+      suffix = '';
+      end = term.length - 1;
+  }
+  return prefix + term.substring(start, end) + suffix;
+}
+
+function parseKeywords(queryString) {
+  const quoted = parseQuotedKeyterms(queryString);
+  const notQuoted = parseNotQuotedKeyterms(queryString);
+  const keywords = quoted.concat(notQuoted);
+  return keywords;
+}
+
+function parseQuotedKeyterms(queryString) {
+  const terms = [];
+  // Extract only the quoted terms
+  const pattern = /"[^"]*"/g;
+  const quoted = queryString.match(pattern);
+  if (quoted && quoted.length > 0) {
+      for (const term of quoted) {
+          // Remove the wrapping quote marks
+          terms.push(term.substring(1, term.length - 1));
+      }
+  }
+  return terms;
+}
+
+function parseNotQuotedKeyterms(queryString) {
+  let terms = [];
+  // Remove quoted terms from the keywords
+  const pattern = /"[^"]*"/g;
+  const notQuoted = queryString.split(pattern);
+  // Split on each word
+  if (notQuoted && notQuoted.length > 0) {
+      for (const term of notQuoted) {
+          terms = terms.concat(term.split(/\s+/));
+      }
+      // Remove empty items from the array
+      terms = removeMatchingArrayItems(terms, '');
+  }
+  return terms;
+}
+
+function removeMatchingArrayItems(array, search) {
+  return array.filter(function (item) {
+      return item != search;
+  });
+}
 
 async function getTotal() {
   const statement = 'select COUNT(*) from `' + domain + '`';
