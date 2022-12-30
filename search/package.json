@@ -9,7 +9,7 @@
   "author": "David Holland <davidzholland@gmail.com>",
   "license": "ISC",
   "devDependencies": {
-    "serverless": "^1.52.0"
+    "serverless": "^1.83.3"
   },
   "dependencies": {
     "sqlstring": "^2.3.1"
